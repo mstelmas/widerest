@@ -1,67 +1,47 @@
 package pl.touk.widerest.api;
 
 
-import javaslang.Tuple;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpClientErrorException;
 import pl.touk.widerest.AbstractTest;
-import pl.touk.widerest.base.ApiTestUrls;
 import pl.touk.widerest.security.oauth2.Scope;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isEmptyString;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class CurrencyControllerTest extends AbstractTest {
+    private final static String INVALID_CURRENCY_CODE = "this_is_definitely_not_a_currency";
+    private final static String EUR_CURRENCY_CODE = "eur";
 
     @Test
-    public void shouldGetDefaultCurrency() throws Throwable {
-        givenAuthorizationServerClient(authorizationServerClient -> {
-            whenLoggedInBackoffice(authorizationServerClient, Tuple.of("admin", "admin"));
-            whenAuthorizationRequestedFor(authorizationServerClient, Scope.STAFF, oAuth2RestTemplate -> {
+    public void shouldReturnDefaultCurrencyCode() throws Throwable {
+        givenAuthorizationFor(Scope.STAFF, adminRestTemplate ->
+            whenDefaultCurrency.codeRetrieved(defaultCurrencyCode ->
+                    thenDefaultCurrency.codeEquals(defaultCurrencyCode)
+            )
+        );
+    }
 
-                final String currentCurrencyCode = oAuth2RestTemplate.getForObject(ApiTestUrls.DEFAULT_CURRENCY_URL, String.class, serverPort);
+    @Test
+    public void shouldChangeDefaultCurrencyCode() throws Throwable {
+        givenAuthorizationFor(Scope.STAFF, adminRestTemplate -> {
+            whenDefaultCurrency.codeSet(EUR_CURRENCY_CODE);
 
-                assertThat(currentCurrencyCode, not(isEmptyString()));
-            });
+            thenDefaultCurrency.codeEquals(EUR_CURRENCY_CODE);
         });
     }
 
     @Test
-    public void shouldSetDefaultCurrency() throws Throwable {
-        givenAuthorizationServerClient(authorizationServerClient -> {
-            whenLoggedInBackoffice(authorizationServerClient, Tuple.of("admin", "admin"));
-            whenAuthorizationRequestedFor(authorizationServerClient, Scope.STAFF, oAuth2RestTemplate -> {
-
-                final String eurCurrencyCode = "eur";
-
-                oAuth2RestTemplate.put(ApiTestUrls.DEFAULT_CURRENCY_URL, eurCurrencyCode, serverPort);
-
-                final String currentCurrencyCode = oAuth2RestTemplate.getForObject(ApiTestUrls.DEFAULT_CURRENCY_URL, String.class, serverPort);
-
-                assertThat(currentCurrencyCode, equalTo(eurCurrencyCode.toUpperCase()));
-            });
-        });
-    }
-
-
-    @Test(expected = HttpServerErrorException.class)
-    public void shouldThrowExceptionOnEmptyCredentials() throws Throwable {
-        givenAuthorizationServerClient(authorizationServerClient -> {
-            whenLoggedInBackoffice(authorizationServerClient, Tuple.of("admin", "admin"));
-            whenAuthorizationRequestedFor(authorizationServerClient, Scope.STAFF, oAuth2RestTemplate -> {
-
-                final String SETTING_VALUE = "this_is_definitely_not_a_currency";
-
-                oAuth2RestTemplate.put(ApiTestUrls.DEFAULT_CURRENCY_URL, SETTING_VALUE, serverPort);
-            });
-        });
-
+    public void shouldThrowIfInvalidCurrencyCode() throws Throwable {
+        givenAuthorizationFor(Scope.STAFF, adminRestTemplate ->
+                assertThatExceptionOfType(HttpClientErrorException.class)
+                        .isThrownBy(() -> whenDefaultCurrency.codeSet(INVALID_CURRENCY_CODE))
+                        .has(ApiTestHttpConditions.httpNotFoundCondition)
+        );
     }
 }

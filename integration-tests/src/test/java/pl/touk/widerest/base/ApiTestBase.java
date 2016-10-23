@@ -69,6 +69,11 @@ public abstract class ApiTestBase {
 
     protected CatalogPreparer givenCatalog;
 
+    @Resource
+    protected DefaultCurrencyExpectations thenDefaultCurrency;
+
+    protected DefaultCurrencyBehaviour whenDefaultCurrency;
+
     protected RestTemplate backofficeRestTemplate;
 
     protected CatalogOperationsLocal catalogOperationsLocal;
@@ -87,6 +92,8 @@ public abstract class ApiTestBase {
 
         this.whenCategory = new CategoryBehaviour(catalogOperationsRemote);
         this.givenCatalog = new CatalogPreparer(catalogOperationsLocal, catalogOperationsRemote);
+
+        this.whenDefaultCurrency = new DefaultCurrencyBehaviour(backofficeRestTemplate, serverPort);
 
         this.apiUrl = UriComponentsBuilder.fromUriString("http://localhost:{port}/v1").buildAndExpand(serverPort).toUri();
     }
