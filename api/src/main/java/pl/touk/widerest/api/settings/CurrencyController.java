@@ -22,7 +22,7 @@ public class CurrencyController {
     @PreAuthorize("hasRole('PERMISSION_ALL_SYSTEM_PROPERTY')")
     @RequestMapping(method = RequestMethod.GET)
     @ApiOperation("Get default currency code")
-    public String getDefaultCurrencyCode(){
+    public String getDefaultCurrencyCode() {
         return currencyServiceProxy.findDefaultBroadleafCurrency()
                 .map(BroadleafCurrency::getCurrencyCode)
                 .orElseThrow(CurrencyNotFoundException::new);

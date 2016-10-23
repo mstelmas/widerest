@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @RunWith(SpringJUnit4ClassRunner.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class CurrencyControllerTest extends AbstractTest {
-    private final static String INVALID_CURRENCY_CODE = "this_is_definitely_not_a_currency";
-    private final static String EUR_CURRENCY_CODE = "eur";
+    private static final String INVALID_CURRENCY_CODE = "this_is_definitely_not_a_currency";
+    private static final String EUR_CURRENCY_CODE = "eur";
 
     @Test
     public void shouldReturnDefaultCurrencyCode() throws Throwable {
