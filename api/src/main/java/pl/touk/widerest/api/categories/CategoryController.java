@@ -1,25 +1,15 @@
 package pl.touk.widerest.api.categories;
 
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.broadleafcommerce.common.service.GenericEntityService;
-import org.broadleafcommerce.core.catalog.domain.Category;
-import org.broadleafcommerce.core.catalog.domain.CategoryProductXref;
-import org.broadleafcommerce.core.catalog.domain.CategoryProductXrefImpl;
-import org.broadleafcommerce.core.catalog.domain.CategoryXref;
-import org.broadleafcommerce.core.catalog.domain.CategoryXrefImpl;
-import org.broadleafcommerce.core.catalog.domain.Product;
+import org.broadleafcommerce.core.catalog.domain.*;
 import org.broadleafcommerce.core.catalog.service.CatalogService;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resources;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,12 +19,7 @@ import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestWrapper;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pl.touk.widerest.api.common.CatalogUtils;
 import pl.touk.widerest.api.common.ResourceNotFoundException;
@@ -45,26 +30,17 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static pl.touk.widerest.api.ResponseUtils.Statuses.*;
 
 @RestController
 @Validated
 @RequestMapping(value = ResourceServerConfig.API_PATH, produces = { MediaTypes.HAL_JSON_VALUE})
 @Api(value = "categories", description = "Category catalog endpoint")
 public class CategoryController {
-
-    private static final ResponseEntity<Void> NO_CONTENT = ResponseEntity.noContent().build();
-    private static final ResponseEntity<Void> OK = ResponseEntity.ok().build();
-    private static final ResponseEntity<Void> CONFLICT = ResponseEntity.status(HttpStatus.CONFLICT).build();
-    private static final ResponseEntity<Void> CREATED = ResponseEntity.status(HttpStatus.CREATED).build();
 
     @Resource(name="blCatalogService")
     protected CatalogService catalogService;
@@ -132,11 +108,12 @@ public class CategoryController {
 
         final Category createdCategoryEntity = catalogService.saveCategory(categoryConverter.createEntity(categoryDto));
 
-        return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(createdCategoryEntity.getId())
-                .toUri())
-                .build();
+        return CREATED(
+                ServletUriComponentsBuilder.fromCurrentRequest()
+                    .path("/{id}")
+                    .buildAndExpand(createdCategoryEntity.getId())
+                    .toUri()
+        );
     }
 
     @Transactional
@@ -163,7 +140,7 @@ public class CategoryController {
                 .map(category -> categoryConverter.createDto(category, embed, link))
                 .orElseThrow(() -> new ResourceNotFoundException("Category with ID: " + categoryId + " does not exist"));
 
-        return ResponseEntity.ok(categoryToReturnDto);
+        return OK(categoryToReturnDto);
     }
 
     @Transactional
@@ -253,7 +230,7 @@ public class CategoryController {
                 .map(subcategory -> categoryConverter.createDto(subcategory, embed, link))
                 .collect(Collectors.toList());
 
-        return new Resources(subcategoriesDtos);
+        return new Resources<>(subcategoriesDtos);
     }
 
     @Transactional
@@ -474,10 +451,7 @@ public class CategoryController {
 
 
         return NO_CONTENT;
-
     }
-
-    /* ------------------------------- HELPER METHODS ------------------------------- */
 
     private List<Product> getProductsFromCategoryId(final long categoryId) throws ResourceNotFoundException {
 
@@ -541,5 +515,4 @@ public class CategoryController {
 
         return levelCategories;
     }
-
 }

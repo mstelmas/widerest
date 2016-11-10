@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.CREATED;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.OK;
 
 @RestController
 @RequestMapping(value = ResourceServerConfig.API_PATH + "/products", produces = { MediaTypes.HAL_JSON_VALUE })
@@ -93,7 +95,6 @@ public class SkuController {
                 productController.getProductById(productId).getAllSkus().stream()
                         .map(sku -> skuConverter.createDto(sku, embed, link))
                         .collect(toList()),
-
                 linkTo(methodOn(getClass()).readSkusForProductById(productId, null, null)).withSelfRel()
         );
     }
@@ -158,12 +159,12 @@ public class SkuController {
         product.setAdditionalSkus(allProductsSkus);
         catalogService.saveProduct(product);
 
-        return ResponseEntity.created(
+        return CREATED(
                 ServletUriComponentsBuilder.fromCurrentRequest()
                         .path("/products/{productId}/skus/{skuId}")
                         .buildAndExpand(productId, newSkuEntity.getId())
                         .toUri()
-        ).build();
+        );
     }
 
     /* GET /products/{productId}/skus/{skuId} */
@@ -241,7 +242,7 @@ public class SkuController {
             @ApiParam(value = "ID of a specific SKU", required = true)
             @PathVariable(value = "skuId") final Long skuId
     ) {
-        return ResponseEntity.ok(
+        return OK(
                 getSkuByIdForProductById(productId, skuId).getQuantityAvailable()
         );
     }
@@ -332,7 +333,7 @@ public class SkuController {
                 .map(InventoryType::getType)
                 .orElse("");
 
-        return ResponseEntity.ok(skuAvailability);
+        return OK(skuAvailability);
     }
 
     /* DELETE /products/{productId}/skus/{id} */
@@ -360,7 +361,7 @@ public class SkuController {
             throw new ResourceNotFoundException(
                     "Cannot delete SKU with ID: " + skuId + ". SKU is not related to product with ID: " + productId + " or does not exist"
             );
-        };
+        }
 
         catalogService.saveProduct(product);
     }
@@ -425,7 +426,6 @@ public class SkuController {
                             return mediaDto;
                         })
                         .collect(toList()),
-
                 linkTo(methodOn(getClass()).getMediaBySkuId(productId, skuId)).withSelfRel()
         );
     }

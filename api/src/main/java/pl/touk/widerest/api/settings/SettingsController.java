@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import pl.touk.widerest.api.ResponseUtils;
 import pl.touk.widerest.security.oauth2.ResourceServerConfig;
 import springfox.documentation.annotations.ApiIgnore;
 
@@ -28,6 +29,9 @@ import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.NOT_FOUND;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.NO_CONTENT;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.OK;
 
 @RestController
 @RequestMapping(value = ResourceServerConfig.API_PATH + "/settings")
@@ -62,10 +66,8 @@ public class SettingsController {
                 settingsService.getAvailableSystemPropertyNames().stream()
                         .map(name -> propertyConverter.createDto(name, embed, link))
                         .collect(Collectors.toList()),
-
                 linkTo(methodOn(SettingsController.class).readAllProperties(null, null)).withSelfRel()
         );
-
     }
 
     @PreAuthorize("hasRole('PERMISSION_ALL_SYSTEM_PROPERTY')")
@@ -85,12 +87,11 @@ public class SettingsController {
                 .filter(settingsService.getAvailableSystemPropertyNames()::contains)
                 .map(name -> Optional.ofNullable(systemPropertiesDao.readSystemPropertyByName(name))
                                         .map(SystemProperty::getValue)
-                                        .map(ResponseEntity::ok)
+                                        .map(ResponseUtils.Statuses::OK)
                                         .map(ResponseEntity.class::cast)
-                                        .orElse(ResponseEntity.noContent().build())
+                                        .orElse(NO_CONTENT)
                 )
-                .orElse(ResponseEntity.notFound().build());
-
+                .orElse(NOT_FOUND);
     }
 
     @Transactional
@@ -122,10 +123,8 @@ public class SettingsController {
                     systemProperty.setValue(value);
                     systemProperty = systemPropertiesDao.saveSystemProperty(systemProperty);
                     systemPropertiesDao.removeFromCache(systemProperty);
-                    return (ResponseEntity) ResponseEntity.ok(systemProperty.getValue());
+                    return (ResponseEntity) OK(systemProperty.getValue());
                 })
-                .orElse(ResponseEntity.notFound().build());
-
+                .orElse(NOT_FOUND);
     }
-
 }

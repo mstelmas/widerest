@@ -5,34 +5,21 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import javaslang.control.Match;
 import javaslang.control.Try;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.broadleafcommerce.common.payment.PaymentGatewayType;
 import org.broadleafcommerce.common.payment.dto.PaymentRequestDTO;
-import org.broadleafcommerce.common.payment.service.PaymentGatewayConfigurationService;
-import org.broadleafcommerce.common.payment.service.PaymentGatewayConfigurationServiceProvider;
-import org.broadleafcommerce.common.payment.service.PaymentGatewayCustomerService;
-import org.broadleafcommerce.common.payment.service.PaymentGatewayHostedService;
-import org.broadleafcommerce.common.payment.service.PaymentGatewayTransparentRedirectService;
+import org.broadleafcommerce.common.payment.service.*;
 import org.broadleafcommerce.common.service.GenericEntityService;
 import org.broadleafcommerce.common.vendor.service.exception.PaymentException;
 import org.broadleafcommerce.core.catalog.domain.Category;
 import org.broadleafcommerce.core.catalog.domain.Product;
 import org.broadleafcommerce.core.catalog.domain.ProductBundle;
 import org.broadleafcommerce.core.catalog.service.CatalogService;
-import org.broadleafcommerce.core.order.domain.BundleOrderItem;
-import org.broadleafcommerce.core.order.domain.DiscreteOrderItem;
-import org.broadleafcommerce.core.order.domain.Order;
-import org.broadleafcommerce.core.order.domain.OrderAttribute;
-import org.broadleafcommerce.core.order.domain.OrderAttributeImpl;
-import org.broadleafcommerce.core.order.domain.OrderItem;
+import org.broadleafcommerce.core.order.domain.*;
 import org.broadleafcommerce.core.order.service.FulfillmentGroupService;
 import org.broadleafcommerce.core.order.service.OrderItemService;
 import org.broadleafcommerce.core.order.service.OrderService;
@@ -51,7 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resources;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -60,12 +46,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -85,11 +66,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -97,10 +74,8 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.*;
 
-/*
-    TODO: (mst) Refactor, clean up, make exceptions more "expressive"
- */
 
 @RestController
 @RequestMapping(value = ResourceServerConfig.API_PATH + "/orders", produces = { MediaTypes.HAL_JSON_VALUE })
@@ -222,7 +197,6 @@ public class OrderController {
     ) {
 
         return orderConverter.createDto(orderServiceProxy.getProperCart(userDetails, orderId).orElse(null), embed, link);
-        //return DtoConverters.orderEntityToDto.apply(orderServiceProxy.getProperCart(userDetails, orderId).orElse(null));
     }
 
     /* POST /orders */
@@ -261,12 +235,12 @@ public class OrderController {
 
         orderService.save(cart, true);
 
-        return ResponseEntity.created(
+        return CREATED(
                 ServletUriComponentsBuilder.fromCurrentRequest()
                         .path("/{id}")
                         .buildAndExpand(cart.getId())
                         .toUri()
-        ).build();
+        );
     }
 
     /* DELETE /orders/ */
@@ -357,7 +331,7 @@ public class OrderController {
                             .toUri()
             ).body(discreteOrderItemConverter.createDto(addedDiscreteOrderItem, false, true));
         } else {
-            return ResponseEntity.ok().build();
+            return OK;
         }
     }
 
@@ -392,7 +366,7 @@ public class OrderController {
         boolean isBundleBeingAdded = false;
 
         if (orderItemDto.getSkuId() != null && orderItemDto.getBundleProductId() != null || orderItemDto.getQuantity() <= 0) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
+            return CONFLICT;
         }
 
 
@@ -468,7 +442,7 @@ public class OrderController {
                 .path("/{id}")
                 .buildAndExpand(addedItemId);
 
-        return ResponseEntity.created(uriComponents.toUri()).build();
+        return CREATED(uriComponents.toUri());
     }
 
     /* GET /orders/items/ */
@@ -517,7 +491,7 @@ public class OrderController {
                 .orElseThrow(ResourceNotFoundException::new)
                 .getItemCount();
 
-        return ResponseEntity.ok(itemsInOrderCount);
+        return OK(itemsInOrderCount);
     }
 
     @Transactional
@@ -527,12 +501,10 @@ public class OrderController {
             value = "Count all orders",
             notes = "Get a number of all active orders",
             response = Integer.class)
-    public ResponseEntity<String> getOrdersCount(
+    public Long getOrdersCount(
             @ApiIgnore @AuthenticationPrincipal UserDetails userDetails) {
 
-        final String ordersCount = Long.toString(orderServiceProxy.getOrdersByCustomer(userDetails).stream().count());
-
-        return ResponseEntity.ok(ordersCount);
+        return orderServiceProxy.getOrdersByCustomer(userDetails).stream().count();
     }
 
     /* GET /orders/{orderId}/status */
@@ -684,16 +656,16 @@ public class OrderController {
             }
 
             if (hostedService != null) {
-                return ResponseEntity.created(URI.create(hostedService.requestHostedEndpoint(paymentRequestDTO).getResponseMap().get("REDIRECT_URL"))).build();
+                return CREATED(URI.create(hostedService.requestHostedEndpoint(paymentRequestDTO).getResponseMap().get("REDIRECT_URL")));
             }
             if (transparentRedirectService != null) {
-                return ResponseEntity.ok(transparentRedirectService.createAuthorizeForm(paymentRequestDTO).getResponseMap());
+                return OK(transparentRedirectService.createAuthorizeForm(paymentRequestDTO).getResponseMap());
             }
         } catch (PaymentException e) {
             log.error("Error while initiating payment", e);
-        };
+        }
 
-        return ResponseEntity.unprocessableEntity().build();
+        return UNPROCESSABLE_ENTITY;
     }
 
     private PaymentGatewayConfigurationService findPaymentGatewayConfigurationService(PaymentDto paymentDto) {

@@ -56,6 +56,8 @@ import java.util.Optional;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.CREATED;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.NO_CONTENT;
 
 @RestController
 @RequestMapping(value = ResourceServerConfig.API_PATH + "/orders", produces = { MediaTypes.HAL_JSON_VALUE })
@@ -187,7 +189,6 @@ public class FulfillmentController {
 
         return new Resources<>(
                 fulfillmentGroupsDtoForOrder,
-
                 linkTo(methodOn(FulfillmentController.class).getOrderFulfillments(null, orderId, null, null)).withSelfRel()
         );
     }
@@ -289,7 +290,7 @@ public class FulfillmentController {
         fulfillmentGroupService.save(updatedFulfillmentGroupEntity);
         Try.ofFailable(() -> orderService.save(orderEntity, true)).onFailure(ex -> log.error("Error saving object", ex));
 
-        return ResponseEntity.noContent().build();
+        return NO_CONTENT;
     }
 
     @Transactional
@@ -336,14 +337,12 @@ public class FulfillmentController {
         fulfillmentGroupService.save(fulfillmentGroup);
         orderService.save(orderEntity, true);
 
-        ResponseEntity<Void> build = ResponseEntity.created(
+        return CREATED(
                 ServletUriComponentsBuilder.fromCurrentRequest()
-                        .path("/{fulfillmentId}")
-                        .buildAndExpand(fulfillmentGroup.getId())
-                        .toUri()
-        ).build();
-
-        return build;
+                    .path("/{fulfillmentId}")
+                    .buildAndExpand(fulfillmentGroup.getId())
+                    .toUri()
+        );
     }
 
 

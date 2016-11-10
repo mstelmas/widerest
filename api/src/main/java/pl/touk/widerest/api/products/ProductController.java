@@ -1,23 +1,13 @@
 package pl.touk.widerest.api.products;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import org.apache.commons.lang.StringUtils;
 import org.broadleafcommerce.common.exception.ServiceException;
 import org.broadleafcommerce.common.media.domain.Media;
 import org.broadleafcommerce.common.security.service.ExploitProtectionService;
 import org.broadleafcommerce.common.service.GenericEntityService;
 import org.broadleafcommerce.common.util.BLCSystemProperty;
-import org.broadleafcommerce.core.catalog.domain.CategoryProductXref;
-import org.broadleafcommerce.core.catalog.domain.Product;
-import org.broadleafcommerce.core.catalog.domain.ProductBundle;
-import org.broadleafcommerce.core.catalog.domain.Sku;
-import org.broadleafcommerce.core.catalog.domain.SkuBundleItem;
-import org.broadleafcommerce.core.catalog.domain.SkuMediaXref;
-import org.broadleafcommerce.core.catalog.domain.SkuMediaXrefImpl;
+import org.broadleafcommerce.core.catalog.domain.*;
 import org.broadleafcommerce.core.catalog.service.CatalogService;
 import org.broadleafcommerce.core.search.domain.SearchCriteria;
 import org.broadleafcommerce.core.search.domain.SearchResult;
@@ -27,12 +17,7 @@ import org.springframework.hateoas.Resources;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pl.touk.widerest.api.categories.CategoryConverter;
 import pl.touk.widerest.api.categories.CategoryDto;
@@ -44,16 +29,14 @@ import pl.touk.widerest.security.oauth2.ResourceServerConfig;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.CREATED;
+import static pl.touk.widerest.api.ResponseUtils.Statuses.OK;
 
 @RestController
 @RequestMapping(value = ResourceServerConfig.API_PATH + "/products", produces = { MediaTypes.HAL_JSON_VALUE })
@@ -142,7 +125,7 @@ public class ProductController {
             productsToReturn = catalogService.findAllProducts(limit != null ? limit : 0, offset != null ? offset : 0);
         }
 
-        return ResponseEntity.ok(
+        return OK(
                 new Resources<>(
                         productsToReturn.stream()
                                 .filter(CatalogUtils.shouldProductBeVisible)
@@ -299,12 +282,12 @@ public class ProductController {
                 productConverter.createEntity(receivedProductDto)
         );
 
-        return ResponseEntity.created(
+        return CREATED(
                 ServletUriComponentsBuilder.fromCurrentRequest()
-                        .path("/{id}")
-                        .buildAndExpand(product.getId())
-                        .toUri()
-        ).build();
+                    .path("/{id}")
+                    .buildAndExpand(product.getId())
+                    .toUri()
+        );
     }
 
 
@@ -342,8 +325,7 @@ public class ProductController {
             @ApiParam(value = "ID of a specific product", required = true)
             @PathVariable(value = "productId") final Long productId,
             @RequestParam(value = "embed", defaultValue = "false") Boolean embed,
-            @RequestParam(value = "link", defaultValue = "true") Boolean link
-    ) {
+            @RequestParam(value = "link", defaultValue = "true") Boolean link) {
 
         return Optional.of(getProductById(productId))
                 .map(product -> productConverter.createDto(product, embed, link))
@@ -461,7 +443,6 @@ public class ProductController {
                         return mediaDto;
                     })
                     .collect(toList()),
-
                 linkTo(methodOn(getClass()).getProductDefaultSkuMedias(productId)).withSelfRel()
         );
     }

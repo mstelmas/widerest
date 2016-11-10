@@ -2,11 +2,7 @@ package pl.touk.widerest.api.customers;
 
 
 import com.google.common.collect.ImmutableMap;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import javaslang.control.Match;
 import org.broadleafcommerce.core.order.domain.Order;
 import org.broadleafcommerce.core.order.service.MergeCartService;
@@ -20,7 +16,6 @@ import org.broadleafcommerce.profile.core.service.CustomerUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resources;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.AuthenticationException;
@@ -33,12 +28,8 @@ import org.springframework.security.oauth2.provider.code.AuthorizationCodeServic
 import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
 import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import pl.touk.widerest.api.ResponseUtils;
 import pl.touk.widerest.api.common.ResourceNotFoundException;
 import pl.touk.widerest.api.products.ProductDto;
 import pl.touk.widerest.security.authentication.AnonymousUserDetailsService;
@@ -157,7 +148,7 @@ public class CustomerController {
                 .map(toCustomerId(customerUserDetails, customerId))
                 .map(customerService::readCustomerById)
                 .map(customer -> customerConverter.createDto(customer, embed, link))
-                .map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
+                .map(ResponseUtils.Statuses::OK)
                 .orElseThrow(CustomerNotFoundException::new);
     }
 
@@ -205,7 +196,7 @@ public class CustomerController {
                 .map(toCustomerId(customerUserDetails, customerId))
                 .map(customerService::readCustomerById)
                 .map(this::generateCode)
-                .map(ResponseEntity::ok)
+                .map(ResponseUtils.Statuses::OK)
                 .orElseThrow(CustomerNotFoundException::new);
     }
 
